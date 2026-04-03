@@ -1,0 +1,137 @@
+import { useEffect, useRef, useState } from "react";
+import { db } from "../firebase";
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+
+export default function ChatWindow({ user, selectedUser }) {
+  const [messages, setMessages] = useState([]);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedUser?.chatId) return;
+
+    const q = query(
+      collection(db, "chats", selectedUser.chatId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const msgs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setMessages(msgs);
+
+      // 🔥 Mark messages as seen
+      snapshot.docs.forEach(async (docSnap) => {
+        const data = docSnap.data();
+
+        if (data.senderId !== user.uid && !data.seen) {
+          await updateDoc(
+            doc(db, "chats", selectedUser.chatId, "messages", docSnap.id),
+            { seen: true }
+          );
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [selectedUser?.chatId, user?.uid]);
+
+  // 🔥 Auto scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 🔒 Safety check
+  if (!selectedUser || !user) {
+    return <div style={{ padding: "20px" }}>Select a chat</div>;
+  }
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        padding: "15px",
+        background: "#e5ddd5",
+        overflowY: "auto",
+      }}
+    >
+      {/* 🔥 Empty state */}
+      {messages.length === 0 && (
+        <div style={{ textAlign: "center", color: "#555" }}>
+          No messages yet
+        </div>
+      )}
+
+      {messages.map((msg) => {
+        const isMe = msg.senderId === user.uid;
+
+        return (
+          <div
+            key={msg.id}
+            style={{
+              display: "flex",
+              justifyContent: isMe ? "flex-end" : "flex-start",
+              marginBottom: "10px",
+            }}
+          >
+            <div
+              style={{
+                background: isMe ? "#dcf8c6" : "white",
+                padding: "10px",
+                borderRadius: "10px",
+                maxWidth: "60%",
+                boxShadow: "0 1px 1px rgba(0,0,0,0.1)",
+              }}
+            >
+              {/* 💬 TEXT */}
+              {msg.text && (
+                <div>
+                  {msg.text}
+
+                  {/* ✔✔ STATUS */}
+                  {isMe && (
+                    <div style={{ fontSize: "10px", textAlign: "right" }}>
+                      {msg.seen ? "✔✔ Seen" : "✔ Sent"}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 🖼 IMAGE */}
+              {msg.file && (
+                <img
+                  src={msg.file}
+                  alt="message"
+                  style={{
+                    width: "150px",
+                    marginTop: "5px",
+                    borderRadius: "5px",
+                  }}
+                />
+              )}
+
+              {/* 🎤 AUDIO */}
+              {msg.audio && (
+                <audio controls style={{ marginTop: "5px", width: "100%" }}>
+                  <source src={msg.audio} type="audio/webm" />
+                </audio>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 🔥 Scroll anchor */}
+      <div ref={bottomRef} />
+    </div>
+  );
+}
