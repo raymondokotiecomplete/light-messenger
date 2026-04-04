@@ -11,6 +11,9 @@ export default function Chat({ user }) {
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
+  // 🧠 Normalize chatId (important fix)
+  const chatId = selectedUser?.chatId || selectedUser?.id;
+
   // 🟢 ONLINE STATUS LISTENER
   useEffect(() => {
     if (!selectedUser?.uid) return;
@@ -30,14 +33,13 @@ export default function Chat({ user }) {
 
   // ⌨️ TYPING LISTENER
   useEffect(() => {
-    if (!selectedUser?.chatId || !selectedUser?.uid) return;
+    if (!chatId || !selectedUser?.uid) return;
 
-    const ref = doc(db, "typing", selectedUser.chatId);
+    const ref = doc(db, "typing", chatId);
 
     const unsubscribe = onSnapshot(ref, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-
         setIsTyping(data[selectedUser.uid] === true);
       } else {
         setIsTyping(false);
@@ -45,7 +47,7 @@ export default function Chat({ user }) {
     });
 
     return () => unsubscribe();
-  }, [selectedUser?.chatId, selectedUser?.uid]);
+  }, [chatId, selectedUser?.uid]);
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
@@ -64,7 +66,10 @@ export default function Chat({ user }) {
           Chats
         </h2>
 
+        {/* 🔍 Start Chat */}
         <UserSearch user={user} setSelectedUser={setSelectedUser} />
+
+        {/* 💬 Existing Chats */}
         <ChatList user={user} setSelectedUser={setSelectedUser} />
       </div>
 
@@ -85,7 +90,7 @@ export default function Chat({ user }) {
                 {selectedUser.name || "Chat"}
               </div>
 
-              {/* 🟢 STATUS (Typing > Online > Offline) */}
+              {/* 🟢 STATUS */}
               <div style={{ fontSize: "12px" }}>
                 {isTyping ? (
                   <span style={{ color: "green" }}>typing...</span>
@@ -98,10 +103,16 @@ export default function Chat({ user }) {
             </div>
 
             {/* 🔥 Messages */}
-            <ChatWindow user={user} selectedUser={selectedUser} />
+            <ChatWindow
+              user={user}
+              selectedUser={{ ...selectedUser, chatId }}
+            />
 
             {/* 🔥 Input */}
-            <MessageInput user={user} selectedUser={selectedUser} />
+            <MessageInput
+              user={user}
+              selectedUser={{ ...selectedUser, chatId }}
+            />
           </>
         ) : (
           <div
