@@ -11,27 +11,23 @@ export default function Chat({ user }) {
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
-  // 🧠 Normalize chatId (important fix)
+  // ✅ Normalize chatId safely
   const chatId = selectedUser?.chatId || selectedUser?.id;
 
-  // 🟢 ONLINE STATUS LISTENER
+  // 🟢 ONLINE STATUS
   useEffect(() => {
     if (!selectedUser?.uid) return;
 
     const ref = doc(db, "onlineUsers", selectedUser.uid);
 
     const unsubscribe = onSnapshot(ref, (docSnap) => {
-      if (docSnap.exists()) {
-        setIsOnline(docSnap.data().online);
-      } else {
-        setIsOnline(false);
-      }
+      setIsOnline(docSnap.exists() ? docSnap.data().online : false);
     });
 
     return () => unsubscribe();
   }, [selectedUser?.uid]);
 
-  // ⌨️ TYPING LISTENER
+  // ⌨️ TYPING STATUS
   useEffect(() => {
     if (!chatId || !selectedUser?.uid) return;
 
@@ -50,65 +46,89 @@ export default function Chat({ user }) {
   }, [chatId, selectedUser?.uid]);
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#F5F7FA" }}>
       
-      {/* 🔥 SIDEBAR */}
+      {/* 🔵 SIDEBAR */}
       <div
         style={{
           width: "320px",
-          background: "#111b21",
-          color: "white",
+          background: "#FFFFFF",
+          borderRight: "1px solid #E5E5EA",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <h2 style={{ padding: "15px", borderBottom: "1px solid #222" }}>
-          Chats
+        <h2
+          style={{
+            padding: "20px",
+            margin: 0,
+            color: "#0A84FF",
+            borderBottom: "1px solid #E5E5EA",
+          }}
+        >
+          Light Messenger
         </h2>
 
-        {/* 🔍 Start Chat */}
         <UserSearch user={user} setSelectedUser={setSelectedUser} />
-
-        {/* 💬 Existing Chats */}
         <ChatList user={user} setSelectedUser={setSelectedUser} />
       </div>
 
-      {/* 🔥 CHAT AREA */}
+      {/* 💬 CHAT AREA */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         
         {selectedUser ? (
           <>
-            {/* 🔥 Header */}
+            {/* 🔥 HEADER */}
             <div
               style={{
-                padding: "15px",
-                borderBottom: "1px solid #ddd",
-                background: "#f0f2f5",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "15px 20px",
+                background: "#FFFFFF",
+                borderBottom: "1px solid #E5E5EA",
               }}
             >
-              <div style={{ fontWeight: "bold" }}>
-                {selectedUser.name || "Chat"}
-              </div>
+              {/* 👤 Avatar */}
+              <img
+                src={
+                  selectedUser.photoURL ||
+                  "https://via.placeholder.com/40"
+                }
+                alt="avatar"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%", // ✅ STEP 5 applied
+                  objectFit: "cover",  // ✅ STEP 5 applied
+                }}
+              />
 
-              {/* 🟢 STATUS */}
-              <div style={{ fontSize: "12px" }}>
-                {isTyping ? (
-                  <span style={{ color: "green" }}>typing...</span>
-                ) : (
-                  <span style={{ color: isOnline ? "green" : "gray" }}>
-                    {isOnline ? "🟢 Online" : "⚫ Offline"}
-                  </span>
-                )}
+              {/* Name + Status */}
+              <div>
+                <div style={{ fontWeight: "600", color: "#1C1C1E" }}>
+                  {selectedUser.name || "Chat"}
+                </div>
+
+                <div style={{ fontSize: "12px", color: "#6E6E73" }}>
+                  {isTyping ? (
+                    <span style={{ color: "#0A84FF" }}>typing...</span>
+                  ) : isOnline ? (
+                    <span style={{ color: "#0A84FF" }}>Online</span>
+                  ) : (
+                    "Offline"
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* 🔥 Messages */}
+            {/* 💬 MESSAGES */}
             <ChatWindow
               user={user}
               selectedUser={{ ...selectedUser, chatId }}
             />
 
-            {/* 🔥 Input */}
+            {/* ✍️ INPUT */}
             <MessageInput
               user={user}
               selectedUser={{ ...selectedUser, chatId }}
@@ -121,10 +141,11 @@ export default function Chat({ user }) {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              color: "#555",
+              color: "#6E6E73",
+              fontSize: "18px",
             }}
           >
-            Select a chat to start messaging
+            Select a chat to start messaging 💬
           </div>
         )}
       </div>

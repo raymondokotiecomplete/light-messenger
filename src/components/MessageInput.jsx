@@ -60,7 +60,6 @@ export default function MessageInput({ user, selectedUser }) {
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
 
-        // 🔥 Upload to Cloudinary
         const data = new FormData();
         data.append("file", blob);
         data.append("upload_preset", "wo1in6oj");
@@ -77,7 +76,6 @@ export default function MessageInput({ user, selectedUser }) {
 
         const chatRef = doc(db, "chats", chatId);
 
-        // 🔥 Save audio message
         await addDoc(collection(chatRef, "messages"), {
           audio: result.secure_url,
           senderId: user.uid,
@@ -85,7 +83,6 @@ export default function MessageInput({ user, selectedUser }) {
           seen: false,
         });
 
-        // 🔥 Update chat metadata (IMPORTANT)
         await setDoc(
           chatRef,
           {
@@ -97,10 +94,8 @@ export default function MessageInput({ user, selectedUser }) {
           { merge: true }
         );
 
-        // 🔥 Stop typing (safety)
         await handleStopTyping();
 
-        // 🔥 Stop mic tracks
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -112,7 +107,6 @@ export default function MessageInput({ user, selectedUser }) {
     }
   };
 
-  // ⏹ STOP RECORDING
   const stopRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.stop();
@@ -120,7 +114,7 @@ export default function MessageInput({ user, selectedUser }) {
     }
   };
 
-  // 📩 SEND TEXT / IMAGE
+  // 📩 SEND MESSAGE
   const sendMessage = async () => {
     if (!text.trim() && !file) return;
 
@@ -182,10 +176,20 @@ export default function MessageInput({ user, selectedUser }) {
     <div
       style={{
         display: "flex",
+        alignItems: "center",
         padding: "10px",
-        background: "#f0f2f5",
+        borderTop: "1px solid #E5E5EA",
+        background: "#FFFFFF",
+        gap: "8px",
       }}
     >
+      {/* 📎 FILE */}
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
+
+      {/* 💬 INPUT */}
       <input
         type="text"
         value={text}
@@ -204,43 +208,38 @@ export default function MessageInput({ user, selectedUser }) {
         placeholder="Type a message"
         style={{
           flex: 1,
-          padding: "10px",
+          padding: "12px",
           borderRadius: "20px",
-          border: "1px solid #ccc",
-          marginRight: "10px",
+          border: "1px solid #E5E5EA",
+          outline: "none",
         }}
       />
 
-      <input
-        type="file"
-        onChange={(e) => setFile(e.target.files[0])}
-      />
-
-      {/* 🎤 Voice Button */}
+      {/* 🎤 VOICE */}
       <button
         onClick={recording ? stopRecording : startRecording}
         style={{
-          marginLeft: "10px",
-          padding: "10px",
-          borderRadius: "50%",
-          background: recording ? "red" : "#25d366",
+          background: recording ? "red" : "#0A84FF",
           color: "white",
           border: "none",
+          padding: "10px",
+          borderRadius: "50%",
+          cursor: "pointer",
         }}
       >
         {recording ? "⏹" : "🎤"}
       </button>
 
-      {/* 📩 Send Button */}
+      {/* 📩 SEND */}
       <button
         onClick={sendMessage}
         style={{
-          marginLeft: "10px",
-          padding: "10px 15px",
-          borderRadius: "20px",
-          background: "#25d366",
+          background: "#0A84FF",
           color: "white",
           border: "none",
+          padding: "10px 16px",
+          borderRadius: "20px",
+          cursor: "pointer",
         }}
       >
         Send

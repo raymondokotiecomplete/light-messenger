@@ -60,13 +60,14 @@ export default function ChatWindow({ user, selectedUser }) {
       style={{
         flex: 1,
         padding: "15px",
-        background: "#e5ddd5",
-        overflowY: "auto",
+        background: "#F5F7FA", // ✅ clean white-blue background
+       overflowY: "auto",
+scrollBehavior: "smooth", // ✅ ADD THIS
       }}
     >
       {/* 🔥 Empty state */}
       {messages.length === 0 && (
-        <div style={{ textAlign: "center", color: "#555" }}>
+        <div style={{ textAlign: "center", color: "#6E6E73" }}>
           No messages yet
         </div>
       )}
@@ -83,13 +84,19 @@ export default function ChatWindow({ user, selectedUser }) {
               marginBottom: "10px",
             }}
           >
+            {/* ✅ THIS IS WHERE WE APPLY YOUR NEW BUBBLE STYLES */}
             <div
               style={{
-                background: isMe ? "#dcf8c6" : "white",
-                padding: "10px",
-                borderRadius: "10px",
+                background: isMe ? "#0A84FF" : "#FFFFFF",
+                color: isMe ? "white" : "#1C1C1E",
+                border: isMe ? "none" : "1px solid #E5E5EA",
+                borderRadius: isMe
+                  ? "18px 18px 4px 18px"
+                  : "18px 18px 18px 4px",
+                padding: "10px 14px",
                 maxWidth: "60%",
-                boxShadow: "0 1px 1px rgba(0,0,0,0.1)",
+                marginLeft: isMe ? "auto" : "0",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
               }}
             >
               {/* 💬 TEXT */}
@@ -99,7 +106,14 @@ export default function ChatWindow({ user, selectedUser }) {
 
                   {/* ✔✔ STATUS */}
                   {isMe && (
-                    <div style={{ fontSize: "10px", textAlign: "right" }}>
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        textAlign: "right",
+                        marginTop: "4px",
+                        opacity: 0.8,
+                      }}
+                    >
                       {msg.seen ? "✔✔ Seen" : "✔ Sent"}
                     </div>
                   )}
@@ -114,7 +128,7 @@ export default function ChatWindow({ user, selectedUser }) {
                   style={{
                     width: "150px",
                     marginTop: "5px",
-                    borderRadius: "5px",
+                    borderRadius: "10px",
                   }}
                 />
               )}
