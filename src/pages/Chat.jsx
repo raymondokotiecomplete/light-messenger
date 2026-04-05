@@ -11,6 +11,8 @@ export default function Chat({ user }) {
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
+  const isMobile = window.innerWidth < 768;
+
   const chatId = selectedUser?.chatId || selectedUser?.id;
 
   // 🟢 ONLINE STATUS
@@ -47,118 +49,133 @@ export default function Chat({ user }) {
   return (
     <div
       style={{
-        display: "flex",
-        height: "100dvh", // ✅ FIXED (no more jump)
+        height: "100dvh",
         background: "#F5F7FA",
-        overflow: "hidden", // ✅ FIXED (no sideways shift)
+        display: "flex",
+        overflow: "hidden",
       }}
     >
-      {/* 🔵 SIDEBAR */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "320px",
-          background: "#FFFFFF",
-          borderRight: "1px solid #E5E5EA",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <h2
-          style={{
-            padding: "20px",
-            margin: 0,
-            color: "#0A84FF",
-            borderBottom: "1px solid #E5E5EA",
-          }}
-        >
-          Light Messenger
-        </h2>
-
-        <UserSearch user={user} setSelectedUser={setSelectedUser} />
-        <ChatList user={user} setSelectedUser={setSelectedUser} />
-      </div>
-
-      {/* 💬 CHAT AREA */}
-      <div style={{
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  minHeight: 0 // ✅ VERY IMPORTANT (fixes overflow cut)
-}}>
-        {selectedUser ? (
-          <>
-            {/* 🔥 HEADER */}
+      {/* 📱 MOBILE MODE */}
+      {isMobile ? (
+        selectedUser ? (
+          // 👉 CHAT SCREEN
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            
+            {/* 🔙 HEADER WITH BACK BUTTON */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "10px",
-                padding: "15px 20px",
+                padding: "15px",
                 background: "#FFFFFF",
                 borderBottom: "1px solid #E5E5EA",
               }}
             >
-              {/* 👤 Avatar */}
-              <img
-                src={
-                  selectedUser.photoURL ||
-                  "https://via.placeholder.com/40"
-                }
-                alt="avatar"
+              <button
+                onClick={() => setSelectedUser(null)}
                 style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
+                  background: "none",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer",
                 }}
-              />
+              >
+                ←
+              </button>
 
-              {/* Name + Status */}
               <div>
-                <div style={{ fontWeight: "600", color: "#1C1C1E" }}>
-                  {selectedUser.name || "Chat"}
+                <div style={{ fontWeight: "600" }}>
+                  {selectedUser.name}
                 </div>
-
                 <div style={{ fontSize: "12px", color: "#6E6E73" }}>
-                  {isTyping ? (
-                    <span style={{ color: "#0A84FF" }}>typing...</span>
-                  ) : isOnline ? (
-                    <span style={{ color: "#0A84FF" }}>Online</span>
-                  ) : (
-                    "Offline"
-                  )}
+                  {isTyping
+                    ? "typing..."
+                    : isOnline
+                    ? "Online"
+                    : "Offline"}
                 </div>
               </div>
             </div>
 
-            {/* 💬 MESSAGES */}
             <ChatWindow
               user={user}
               selectedUser={{ ...selectedUser, chatId }}
             />
 
-            {/* ✍️ INPUT */}
             <MessageInput
               user={user}
               selectedUser={{ ...selectedUser, chatId }}
             />
-          </>
+          </div>
         ) : (
+          // 👉 CHAT LIST SCREEN
+          <div style={{ width: "100%" }}>
+            <h2
+              style={{
+                padding: "20px",
+                margin: 0,
+                color: "#0A84FF",
+                borderBottom: "1px solid #E5E5EA",
+                background: "#fff",
+              }}
+            >
+              Light Messenger
+            </h2>
+
+            <UserSearch user={user} setSelectedUser={setSelectedUser} />
+            <ChatList user={user} setSelectedUser={setSelectedUser} />
+          </div>
+        )
+      ) : (
+        // 💻 DESKTOP MODE (UNCHANGED)
+        <>
+          {/* SIDEBAR */}
           <div
             style={{
-              flex: 1,
+              width: "320px",
+              background: "#FFFFFF",
+              borderRight: "1px solid #E5E5EA",
               display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#6E6E73",
-              fontSize: "18px",
+              flexDirection: "column",
             }}
           >
-            Select a chat to start messaging 💬
+            <h2
+              style={{
+                padding: "20px",
+                margin: 0,
+                color: "#0A84FF",
+                borderBottom: "1px solid #E5E5EA",
+              }}
+            >
+              Light Messenger
+            </h2>
+
+            <UserSearch user={user} setSelectedUser={setSelectedUser} />
+            <ChatList user={user} setSelectedUser={setSelectedUser} />
           </div>
-        )}
-      </div>
+
+          {/* CHAT */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            {selectedUser ? (
+              <>
+                <ChatWindow
+                  user={user}
+                  selectedUser={{ ...selectedUser, chatId }}
+                />
+                <MessageInput
+                  user={user}
+                  selectedUser={{ ...selectedUser, chatId }}
+                />
+              </>
+            ) : (
+              <div style={{ padding: "20px" }}>
+                Select a chat
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
