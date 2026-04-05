@@ -10,10 +10,19 @@ export default function Chat({ user }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-
-  const isMobile = window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const chatId = selectedUser?.chatId || selectedUser?.id;
+
+  // ✅ FIX: make mobile responsive to rotation
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // 🟢 ONLINE STATUS
   useEffect(() => {
@@ -50,26 +59,35 @@ export default function Chat({ user }) {
     <div
       style={{
         height: "100dvh",
-        background: "#F5F7FA",
+        maxHeight: "100dvh",
         display: "flex",
+        background: "#F5F7FA",
         overflow: "hidden",
       }}
     >
-      {/* 📱 MOBILE MODE */}
+      {/* 📱 MOBILE */}
       {isMobile ? (
         selectedUser ? (
           // 👉 CHAT SCREEN
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            
-            {/* 🔙 HEADER WITH BACK BUTTON */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              overflow: "hidden",
+            }}
+          >
+            {/* HEADER */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "10px",
-                padding: "15px",
+                padding: "12px",
                 background: "#FFFFFF",
                 borderBottom: "1px solid #E5E5EA",
+                flexShrink: 0,
               }}
             >
               <button
@@ -88,6 +106,7 @@ export default function Chat({ user }) {
                 <div style={{ fontWeight: "600" }}>
                   {selectedUser.name}
                 </div>
+
                 <div style={{ fontSize: "12px", color: "#6E6E73" }}>
                   {isTyping
                     ? "typing..."
@@ -98,19 +117,31 @@ export default function Chat({ user }) {
               </div>
             </div>
 
-            <ChatWindow
-              user={user}
-              selectedUser={{ ...selectedUser, chatId }}
-            />
+            {/* 💬 MESSAGES */}
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <ChatWindow
+                user={user}
+                selectedUser={{ ...selectedUser, chatId }}
+              />
+            </div>
 
+            {/* ✍️ INPUT */}
             <MessageInput
               user={user}
               selectedUser={{ ...selectedUser, chatId }}
             />
           </div>
         ) : (
-          // 👉 CHAT LIST SCREEN
-          <div style={{ width: "100%" }}>
+          // 👉 CHAT LIST
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              overflow: "hidden",
+            }}
+          >
             <h2
               style={{
                 padding: "20px",
@@ -118,17 +149,20 @@ export default function Chat({ user }) {
                 color: "#0A84FF",
                 borderBottom: "1px solid #E5E5EA",
                 background: "#fff",
+                flexShrink: 0,
               }}
             >
               Light Messenger
             </h2>
 
-            <UserSearch user={user} setSelectedUser={setSelectedUser} />
-            <ChatList user={user} setSelectedUser={setSelectedUser} />
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              <UserSearch user={user} setSelectedUser={setSelectedUser} />
+              <ChatList user={user} setSelectedUser={setSelectedUser} />
+            </div>
           </div>
         )
       ) : (
-        // 💻 DESKTOP MODE (UNCHANGED)
+        // 💻 DESKTOP
         <>
           {/* SIDEBAR */}
           <div
@@ -156,13 +190,24 @@ export default function Chat({ user }) {
           </div>
 
           {/* CHAT */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              overflow: "hidden",
+            }}
+          >
             {selectedUser ? (
               <>
-                <ChatWindow
-                  user={user}
-                  selectedUser={{ ...selectedUser, chatId }}
-                />
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ChatWindow
+                    user={user}
+                    selectedUser={{ ...selectedUser, chatId }}
+                  />
+                </div>
+
                 <MessageInput
                   user={user}
                   selectedUser={{ ...selectedUser, chatId }}
