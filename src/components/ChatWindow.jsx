@@ -62,7 +62,8 @@ export default function ChatWindow({ user, selectedUser }) {
         padding: "15px",
         background: "#F5F7FA", // ✅ clean white-blue background
        overflowY: "auto",
-scrollBehavior: "smooth", // ✅ ADD THIS
+scrollBehavior: "smooth", //
+minHeight: 0 // ✅ prevents pushing input out
       }}
     >
       {/* 🔥 Empty state */}

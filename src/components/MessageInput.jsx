@@ -174,18 +174,20 @@ export default function MessageInput({ user, selectedUser }) {
 
   return (
       
-        <div style={{
-          display: "flex",
-          position: "sticky",
-          bottom: 0,
-        zIndex: 10,
-        alignItems: "center",
-        padding: "10px",
-        borderTop: "1px solid #E5E5EA",
-        background: "#FFFFFF",
-        gap: "8px",
-      }}
-    >
+        <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    padding: "10px",
+    borderTop: "1px solid #E5E5EA",
+    background: "#FFFFFF",
+    gap: "8px",
+    position: "sticky",
+    bottom: 0,
+    zIndex: 10,
+    flexShrink: 0 // ✅ prevents it from being squeezed out
+  }}
+>
       {/* 📎 FILE */}
       <input
         type="file"

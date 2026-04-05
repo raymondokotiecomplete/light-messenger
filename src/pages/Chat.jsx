@@ -80,7 +80,12 @@ export default function Chat({ user }) {
       </div>
 
       {/* 💬 CHAT AREA */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 0 // ✅ VERY IMPORTANT (fixes overflow cut)
+}}>
         {selectedUser ? (
           <>
             {/* 🔥 HEADER */}
