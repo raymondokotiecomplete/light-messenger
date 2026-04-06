@@ -58,12 +58,12 @@ export default function ChatWindow({ user, selectedUser }) {
   return (
     <div
       style={{
-        flex: 1,
+        height: "100%",           // ← ADD THIS
+        overflowY: "auto",        // ← ADD THIS
+        display: "flex",          // ← ADD THIS
+        flexDirection: "column",  // ← ADD THIS
         padding: "15px",
-        background: "#F5F7FA", // ✅ clean white-blue background
-       overflowY: "auto",
-scrollBehavior: "smooth", //
-minHeight: 0 // ✅ prevents pushing input out
+        background: "#F5F7FA",
       }}
     >
       {/* 🔥 Empty state */}
@@ -73,77 +73,79 @@ minHeight: 0 // ✅ prevents pushing input out
         </div>
       )}
 
-      {messages.map((msg) => {
-        const isMe = msg.senderId === user.uid;
+      <div style={{ flex: 1 }}>
+        {messages.map((msg) => {
+          const isMe = msg.senderId === user.uid;
 
-        return (
-          <div
-            key={msg.id}
-            style={{
-              display: "flex",
-              justifyContent: isMe ? "flex-end" : "flex-start",
-              marginBottom: "10px",
-            }}
-          >
-            {/* ✅ THIS IS WHERE WE APPLY YOUR NEW BUBBLE STYLES */}
+          return (
             <div
+              key={msg.id}
               style={{
-                background: isMe ? "#0A84FF" : "#FFFFFF",
-                color: isMe ? "white" : "#1C1C1E",
-                border: isMe ? "none" : "1px solid #E5E5EA",
-                borderRadius: isMe
-                  ? "18px 18px 4px 18px"
-                  : "18px 18px 18px 4px",
-                padding: "10px 14px",
-                maxWidth: "60%",
-                marginLeft: isMe ? "auto" : "0",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                display: "flex",
+                justifyContent: isMe ? "flex-end" : "flex-start",
+                marginBottom: "10px",
               }}
             >
-              {/* 💬 TEXT */}
-              {msg.text && (
-                <div>
-                  {msg.text}
+              {/* Message bubble */}
+              <div
+                style={{
+                  background: isMe ? "#0A84FF" : "#FFFFFF",
+                  color: isMe ? "white" : "#1C1C1E",
+                  border: isMe ? "none" : "1px solid #E5E5EA",
+                  borderRadius: isMe
+                    ? "18px 18px 4px 18px"
+                    : "18px 18px 18px 4px",
+                  padding: "10px 14px",
+                  maxWidth: "60%",
+                  marginLeft: isMe ? "auto" : "0",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                }}
+              >
+                {/* 💬 TEXT */}
+                {msg.text && (
+                  <div>
+                    {msg.text}
 
-                  {/* ✔✔ STATUS */}
-                  {isMe && (
-                    <div
-                      style={{
-                        fontSize: "10px",
-                        textAlign: "right",
-                        marginTop: "4px",
-                        opacity: 0.8,
-                      }}
-                    >
-                      {msg.seen ? "✔✔ Seen" : "✔ Sent"}
-                    </div>
-                  )}
-                </div>
-              )}
+                    {/* ✔✔ STATUS */}
+                    {isMe && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          textAlign: "right",
+                          marginTop: "4px",
+                          opacity: 0.8,
+                        }}
+                      >
+                        {msg.seen ? "✔✔ Seen" : "✔ Sent"}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* 🖼 IMAGE */}
-              {msg.file && (
-                <img
-                  src={msg.file}
-                  alt="message"
-                  style={{
-                    width: "150px",
-                    marginTop: "5px",
-                    borderRadius: "10px",
-                  }}
-                />
-              )}
+                {/* 🖼 IMAGE */}
+                {msg.file && (
+                  <img
+                    src={msg.file}
+                    alt="message"
+                    style={{
+                      width: "150px",
+                      marginTop: "5px",
+                      borderRadius: "10px",
+                    }}
+                  />
+                )}
 
-              {/* 🎤 AUDIO */}
-              {msg.audio && (
-                <audio controls style={{ marginTop: "5px", width: "100%" }}>
-                  <source src={msg.audio} type="audio/webm" />
-                </audio>
-              )}
+                {/* 🎤 AUDIO */}
+                {msg.audio && (
+                  <audio controls style={{ marginTop: "5px", width: "100%" }}>
+                    <source src={msg.audio} type="audio/webm" />
+                  </audio>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* 🔥 Scroll anchor */}
       <div ref={bottomRef} />
