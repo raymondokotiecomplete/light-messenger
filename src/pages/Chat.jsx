@@ -10,10 +10,19 @@ export default function Chat({ user }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-   const isMobile = window.innerWidth < 768;
-   
   const chatId = selectedUser?.chatId || selectedUser?.id;
+
+  // ✅ Responsive fix
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // 🟢 ONLINE STATUS
   useEffect(() => {
@@ -50,112 +59,133 @@ export default function Chat({ user }) {
     <div
       style={{
         display: "flex",
-        height: "100dvh", // ✅ FIXED (no more jump)
+        height: "100dvh",
         background: "#F5F7FA",
-        overflow: "hidden", // ✅ FIXED (no sideways shift)
+        overflow: "hidden",
       }}
     >
-      {/* 🔵 SIDEBAR */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "320px",
-          background: "#FFFFFF",
-          borderRight: "1px solid #E5E5EA",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <h2
-          style={{
-            padding: "20px",
-            margin: 0,
-            color: "#0A84FF",
-            borderBottom: "1px solid #E5E5EA",
-          }}
-        >
-          Light Messenger
-        </h2>
-
-        <UserSearch user={user} setSelectedUser={setSelectedUser} />
-        <ChatList user={user} setSelectedUser={setSelectedUser} />
-      </div>
-
-      {/* 💬 CHAT AREA */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {selectedUser ? (
-          <>
-            {/* 🔥 HEADER */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "15px 20px",
-                background: "#FFFFFF",
-                borderBottom: "1px solid #E5E5EA",
-              }}
-            >
-              {/* 👤 Avatar */}
-              <img
-                src={
-                  selectedUser.photoURL ||
-                  "https://via.placeholder.com/40"
-                }
-                alt="avatar"
+      {/* 📱 MOBILE MODE */}
+      {isMobile ? (
+        selectedUser ? (
+          // 👉 CHAT SCREEN
+          <div style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0
+          }}>
+            
+            {/* HEADER */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "12px",
+              background: "#FFFFFF",
+              borderBottom: "1px solid #E5E5EA"
+            }}>
+              <button
+                onClick={() => setSelectedUser(null)}
                 style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
+                  background: "none",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer"
                 }}
-              />
+              >
+                ←
+              </button>
 
-              {/* Name + Status */}
               <div>
-                <div style={{ fontWeight: "600", color: "#1C1C1E" }}>
-                  {selectedUser.name || "Chat"}
+                <div style={{ fontWeight: "600" }}>
+                  {selectedUser.name}
                 </div>
 
                 <div style={{ fontSize: "12px", color: "#6E6E73" }}>
-                  {isTyping ? (
-                    <span style={{ color: "#0A84FF" }}>typing...</span>
-                  ) : isOnline ? (
-                    <span style={{ color: "#0A84FF" }}>Online</span>
-                  ) : (
-                    "Offline"
-                  )}
+                  {isTyping ? "typing..." : isOnline ? "Online" : "Offline"}
                 </div>
               </div>
             </div>
 
             {/* 💬 MESSAGES */}
-            <ChatWindow
-              user={user}
-              selectedUser={{ ...selectedUser, chatId }}
-            />
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <ChatWindow user={user} selectedUser={{ ...selectedUser, chatId }} />
+            </div>
 
             {/* ✍️ INPUT */}
-            <MessageInput
-              user={user}
-              selectedUser={{ ...selectedUser, chatId }}
-            />
-          </>
-        ) : (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#6E6E73",
-              fontSize: "18px",
-            }}
-          >
-            Select a chat to start messaging 💬
+            <MessageInput user={user} selectedUser={{ ...selectedUser, chatId }} />
           </div>
-        )}
-      </div>
+        ) : (
+          // 👉 CHAT LIST SCREEN
+          <div style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            height: "100%"
+          }}>
+            <h2 style={{
+              padding: "20px",
+              margin: 0,
+              color: "#0A84FF",
+              borderBottom: "1px solid #E5E5EA",
+              background: "#fff"
+            }}>
+              Light Messenger
+            </h2>
+
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              <UserSearch user={user} setSelectedUser={setSelectedUser} />
+              <ChatList user={user} setSelectedUser={setSelectedUser} />
+            </div>
+          </div>
+        )
+      ) : (
+        // 💻 DESKTOP MODE
+        <>
+          {/* SIDEBAR */}
+          <div style={{
+            width: "320px",
+            background: "#FFFFFF",
+            borderRight: "1px solid #E5E5EA",
+            display: "flex",
+            flexDirection: "column"
+          }}>
+            <h2 style={{
+              padding: "20px",
+              margin: 0,
+              color: "#0A84FF",
+              borderBottom: "1px solid #E5E5EA"
+            }}>
+              Light Messenger
+            </h2>
+
+            <UserSearch user={user} setSelectedUser={setSelectedUser} />
+            <ChatList user={user} setSelectedUser={setSelectedUser} />
+          </div>
+
+          {/* CHAT */}
+          <div style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0
+          }}>
+            {selectedUser ? (
+              <>
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ChatWindow user={user} selectedUser={{ ...selectedUser, chatId }} />
+                </div>
+
+                <MessageInput user={user} selectedUser={{ ...selectedUser, chatId }} />
+              </>
+            ) : (
+              <div style={{ padding: "20px" }}>
+                Select a chat
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
