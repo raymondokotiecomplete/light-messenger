@@ -3,15 +3,17 @@ import UserSearch from "../components/UserSearch";
 import ChatList from "../components/ChatList";
 import ChatWindow from "../components/ChatWindow";
 import MessageInput from "../components/MessageInput";
-import { doc, onSnapshot } from "firebase/firestore";
+import CallComponent from "../components/CallComponent";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 export default function Chat({ user }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [replyToMessage, setReplyToMessage] = useState(null); // ✅ NEW: Reply state
+  const [replyToMessage, setReplyToMessage] = useState(null);
 
   const chatId = selectedUser?.chatId || selectedUser?.id;
 
@@ -56,6 +58,43 @@ export default function Chat({ user }) {
     return () => unsubscribe();
   }, [chatId, selectedUser?.uid]);
 
+  // 📱 PUSH NOTIFICATIONS SETUP
+  useEffect(() => {
+    // Request notification permission
+    if ("Notification" in window && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+
+    // Firebase Cloud Messaging setup
+    try {
+      const messaging = getMessaging();
+      
+      getToken(messaging, { vapidKey: "BN7o9BDFrCw1kybbAOdTPxs0NpkIxRFO_QQRRq8aUtiuby0dWWvhlIQ-cOsExwOmVprq9R7XASC1gZlqkhrH3Ck" })
+        .then((currentToken) => {
+          if (currentToken) {
+            // Save token to user's document in Firestore
+            const userRef = doc(db, "users", user.uid);
+            updateDoc(userRef, { fcmToken: currentToken });
+            console.log("FCM Token saved:", currentToken);
+          }
+        })
+        .catch((err) => console.log("Error getting token:", err));
+
+      // Handle foreground messages
+      onMessage(messaging, (payload) => {
+        console.log("Foreground message received:", payload);
+        if (payload.notification && selectedUser?.uid !== payload.data?.senderId) {
+          new Notification(payload.notification.title, {
+            body: payload.notification.body,
+            icon: "/logo.png",
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Messaging initialization error:", error);
+    }
+  }, [user.uid, selectedUser]);
+
   // ✅ Handle reply to message
   const handleReply = (message) => {
     setReplyToMessage(message);
@@ -88,52 +127,61 @@ export default function Chat({ user }) {
               overflow: "hidden",
             }}
           >
-            {/* HEADER - Fixed tap target size */}
+            {/* HEADER - Fixed tap target size with CallComponent */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
+                justifyContent: "space-between",
                 padding: "12px 16px",
                 background: "#FFFFFF",
                 borderBottom: "1px solid #E5E5EA",
                 flexShrink: 0,
               }}
             >
-              <button
-                onClick={() => {
-                  setSelectedUser(null);
-                  clearReply(); // ✅ Clear reply when going back
-                }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  padding: "8px",
-                  margin: "-8px 0",
-                  width: "40px",
-                  height: "40px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  transition: "background 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#F2F2F7")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                ←
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  onClick={() => {
+                    setSelectedUser(null);
+                    clearReply();
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: "24px",
+                    cursor: "pointer",
+                    padding: "8px",
+                    margin: "-8px 0",
+                    width: "40px",
+                    height: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "50%",
+                    transition: "background 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F2F2F7")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  ←
+                </button>
 
-              <div>
-                <div style={{ fontWeight: "600", fontSize: "16px" }}>
-                  {selectedUser.name}
-                </div>
-                <div style={{ fontSize: "12px", color: "#6E6E73" }}>
-                  {isTyping ? "typing..." : isOnline ? "Online" : "Offline"}
+                <div>
+                  <div style={{ fontWeight: "600", fontSize: "16px" }}>
+                    {selectedUser.name}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6E6E73" }}>
+                    {isTyping ? "typing..." : isOnline ? "Online" : "Offline"}
+                  </div>
                 </div>
               </div>
+
+              {/* 📞 Call Component */}
+              <CallComponent 
+                user={user} 
+                selectedUser={selectedUser} 
+                chatId={chatId} 
+              />
             </div>
 
             {/* 💬 MESSAGES - Fixed scrolling */}
@@ -147,8 +195,8 @@ export default function Chat({ user }) {
               <ChatWindow
                 user={user}
                 selectedUser={{ ...selectedUser, chatId }}
-                onReply={handleReply} // ✅ Pass reply handler
-                replyToMessage={replyToMessage} // ✅ Pass reply state
+                onReply={handleReply}
+                replyToMessage={replyToMessage}
               />
             </div>
 
@@ -157,8 +205,8 @@ export default function Chat({ user }) {
               <MessageInput
                 user={user}
                 selectedUser={{ ...selectedUser, chatId }}
-                replyTo={replyToMessage} // ✅ Pass reply to input
-                onReplyCleared={clearReply} // ✅ Pass clear function
+                replyTo={replyToMessage}
+                onReplyCleared={clearReply}
               />
             </div>
           </div>
@@ -237,7 +285,7 @@ export default function Chat({ user }) {
           >
             {selectedUser ? (
               <>
-                {/* Desktop Header */}
+                {/* Desktop Header with CallComponent */}
                 <div
                   style={{
                     display: "flex",
@@ -257,6 +305,13 @@ export default function Chat({ user }) {
                       {isTyping ? "typing..." : isOnline ? "Online" : "Offline"}
                     </div>
                   </div>
+
+                  {/* 📞 Call Component */}
+                  <CallComponent 
+                    user={user} 
+                    selectedUser={selectedUser} 
+                    chatId={chatId} 
+                  />
                 </div>
 
                 {/* Messages */}
@@ -270,8 +325,8 @@ export default function Chat({ user }) {
                   <ChatWindow
                     user={user}
                     selectedUser={{ ...selectedUser, chatId }}
-                    onReply={handleReply} // ✅ Pass reply handler
-                    replyToMessage={replyToMessage} // ✅ Pass reply state
+                    onReply={handleReply}
+                    replyToMessage={replyToMessage}
                   />
                 </div>
 
@@ -280,8 +335,8 @@ export default function Chat({ user }) {
                   <MessageInput
                     user={user}
                     selectedUser={{ ...selectedUser, chatId }}
-                    replyTo={replyToMessage} // ✅ Pass reply to input
-                    onReplyCleared={clearReply} // ✅ Pass clear function
+                    replyTo={replyToMessage}
+                    onReplyCleared={clearReply}
                   />
                 </div>
               </>
