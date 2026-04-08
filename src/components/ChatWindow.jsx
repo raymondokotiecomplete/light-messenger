@@ -72,6 +72,23 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
     return "Message";
   };
 
+  // ✅ Handle reply button click
+  const handleReplyClick = (msg) => {
+    const replyData = {
+      id: msg.id,
+      text: msg.text || null,
+      file: msg.file || null,
+      audio: msg.audio || null,
+      senderId: msg.senderId,
+    };
+    
+    console.log("Replying to:", replyData);
+    
+    if (onReply) {
+      onReply(replyData);
+    }
+  };
+
   // 🔒 Safety check
   if (!selectedUser || !user) {
     return <div style={{ padding: "20px" }}>Select a chat</div>;
@@ -86,6 +103,8 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
         flexDirection: "column",
         padding: "15px",
         background: "#F5F7FA",
+        // ✅ Important: Allow reply button to be visible outside bubbles
+        overflowX: "visible",
       }}
     >
       {/* 🔥 Empty state */}
@@ -95,7 +114,7 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
         </div>
       )}
 
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, overflowX: "visible" }}>
         {messages.map((msg) => {
           const isMe = msg.senderId === user.uid;
           const repliedContent = msg.replyTo ? getRepliedMessageContent(msg.replyTo.id || msg.replyTo) : null;
@@ -109,7 +128,10 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
                 justifyContent: isMe ? "flex-end" : "flex-start",
                 marginBottom: "10px",
                 position: "relative",
+                // ✅ Allow reply button to be visible
+                overflow: "visible",
               }}
+              className={`message-container-${msg.id}`}
             >
               {/* Message bubble */}
               <div
@@ -123,6 +145,7 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
                   padding: "10px 14px",
                   maxWidth: "70%",
                   marginLeft: isMe ? "auto" : "0",
+                  marginRight: isMe ? "0" : "auto",
                   boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                   position: "relative",
                 }}
@@ -204,7 +227,7 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
                   </audio>
                 )}
 
-                {/* 📅 TIMESTAMP (optional) */}
+                {/* 📅 TIMESTAMP */}
                 {msg.createdAt && (
                   <div
                     style={{
@@ -223,37 +246,43 @@ export default function ChatWindow({ user, selectedUser, onReply, replyToMessage
                 )}
               </div>
 
-              {/* ↩️ REPLY BUTTON (visible on hover) */}
+              {/* ↩️ REPLY BUTTON - FIXED POSITIONING */}
               <button
-                onClick={() => onReply && onReply(msg)}
+                onClick={() => handleReplyClick(msg)}
                 style={{
                   position: "absolute",
-                  [isMe ? "left" : "right"]: "-30px",
+                  // Position based on who sent the message
+                  ...(isMe ? {
+                    left: "-40px",
+                  } : {
+                    right: "-40px",
+                  }),
                   top: "50%",
                   transform: "translateY(-50%)",
                   background: "#FFFFFF",
                   border: "1px solid #E5E5EA",
                   borderRadius: "50%",
-                  width: "28px",
-                  height: "28px",
-                  fontSize: "12px",
+                  width: "32px",
+                  height: "32px",
+                  fontSize: "14px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  opacity: 0,
-                  transition: "opacity 0.2s",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  zIndex: 10,
+                  // Make it always visible for testing
+                  opacity: 1,
+                  transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = 1;
+                  e.currentTarget.style.background = "#F2F2F7";
+                  e.currentTarget.style.transform = "translateY(-50%) scale(1.1)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!document.querySelector(`.message-${msg.id}:hover`)) {
-                    e.currentTarget.style.opacity = 0;
-                  }
+                  e.currentTarget.style.background = "#FFFFFF";
+                  e.currentTarget.style.transform = "translateY(-50%) scale(1)";
                 }}
-                className={`reply-btn-${msg.id}`}
               >
                 ↩️
               </button>

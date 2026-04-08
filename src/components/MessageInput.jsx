@@ -10,7 +10,7 @@ import {
   increment,
 } from "firebase/firestore";
 
-export default function MessageInput({ user, selectedUser }) {
+export default function MessageInput({ user, selectedUser, replyTo, onReplyCleared }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -19,16 +19,23 @@ export default function MessageInput({ user, selectedUser }) {
   const [uploading, setUploading] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
 
   const typingTimeout = useRef(null);
   const fileInputRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const inputRef = useRef(null); // ✅ For focusing on reply
 
   if (!selectedUser || !user) return null;
 
   const chatId = selectedUser.chatId;
+
+  // ✅ Focus input when replying
+  useEffect(() => {
+    if (replyTo) {
+      inputRef.current?.focus();
+    }
+  }, [replyTo]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -115,17 +122,22 @@ export default function MessageInput({ user, selectedUser }) {
 
         const chatRef = doc(db, "chats", chatId);
 
-        // Add reply reference if replying to a message
+        // ✅ Prepare message data with reply support
         const messageData = {
           audio: result.secure_url,
           senderId: user.uid,
           createdAt: serverTimestamp(),
           seen: false,
         };
-        
-        if (replyingTo) {
-          messageData.replyTo = replyingTo;
-          setReplyingTo(null);
+
+        // ✅ Add reply reference if replying
+        if (replyTo) {
+          messageData.replyTo = {
+            id: replyTo.id,
+            text: replyTo.text || (replyTo.file ? "📷 Image" : replyTo.audio ? "🎤 Voice message" : "Message"),
+            senderId: replyTo.senderId,
+          };
+          onReplyCleared?.(); // Clear reply after sending
         }
 
         await addDoc(collection(chatRef, "messages"), messageData);
@@ -226,7 +238,7 @@ export default function MessageInput({ user, selectedUser }) {
         fileUrl = result.secure_url;
       }
 
-      // Prepare message data with reply support
+      // ✅ Prepare message data with reply support
       const messageData = {
         text: messageText,
         file: fileUrl,
@@ -234,10 +246,15 @@ export default function MessageInput({ user, selectedUser }) {
         createdAt: serverTimestamp(),
         seen: false,
       };
-      
-      if (replyingTo) {
-        messageData.replyTo = replyingTo;
-        setReplyingTo(null);
+
+      // ✅ Add reply reference if replying
+      if (replyTo) {
+        messageData.replyTo = {
+          id: replyTo.id,
+          text: replyTo.text || (replyTo.file ? "📷 Image" : replyTo.audio ? "🎤 Voice message" : "Message"),
+          senderId: replyTo.senderId,
+        };
+        onReplyCleared?.(); // Clear reply after sending
       }
 
       await addDoc(collection(chatRef, "messages"), messageData);
@@ -278,20 +295,15 @@ export default function MessageInput({ user, selectedUser }) {
     }
   };
 
-  // Cancel reply
-  const cancelReply = () => {
-    setReplyingTo(null);
-  };
-
   return (
     <>
-      {/* Reply indicator bar */}
-      {replyingTo && (
+      {/* ✅ REPLY INDICATOR BAR */}
+      {replyTo && (
         <div
           style={{
             padding: "8px 12px",
             background: "#E8F0FE",
-            borderLeft: `4px solid #0A84FF`,
+            borderLeft: "4px solid #0A84FF",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -300,13 +312,13 @@ export default function MessageInput({ user, selectedUser }) {
             borderRadius: "8px 8px 0 0",
           }}
         >
-          <span>Replying to message...</span>
+          <span>↪️ Replying to: {replyTo.text?.substring(0, 50) || (replyTo.file ? "📷 Image" : replyTo.audio ? "🎤 Voice message" : "Message")}</span>
           <button
-            onClick={cancelReply}
+            onClick={onReplyCleared}
             style={{
               background: "none",
               border: "none",
-              fontSize: "18px",
+              fontSize: "16px",
               cursor: "pointer",
               color: "#8E8E93",
             }}
@@ -425,6 +437,7 @@ export default function MessageInput({ user, selectedUser }) {
           }}
         >
           <input
+            ref={inputRef}
             type="text"
             value={text}
             onChange={(e) => {
