@@ -10,6 +10,7 @@ import {
   deleteDoc,
   setDoc,
   getDoc,
+  getDocs,  // ✅ Add this line
   writeBatch,
   serverTimestamp,
 } from "firebase/firestore";

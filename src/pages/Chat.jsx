@@ -58,41 +58,67 @@ export default function Chat({ user }) {
     return () => unsubscribe();
   }, [chatId, selectedUser?.uid]);
 
-  // 📱 PUSH NOTIFICATIONS SETUP
+  // 📱 PUSH NOTIFICATIONS SETUP - CORRECTED VERSION
   useEffect(() => {
-    // Request notification permission
-    if ("Notification" in window && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
+    // Request notification permission with user interaction
+   // Chat.jsx
+const requestNotificationPermission = async () => {
+  if (Notification.permission === 'denied') {
+    console.log('Notifications blocked by user');
+    // Show a message to user about enabling notifications
+    showNotificationPrompt();
+    return false;
+  }
+  
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+  
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+};
 
-    // Firebase Cloud Messaging setup
-    try {
-      const messaging = getMessaging();
-      
-      getToken(messaging, { vapidKey: "BN7o9BDFrCw1kybbAOdTPxs0NpkIxRFO_QQRRq8aUtiuby0dWWvhlIQ-cOsExwOmVprq9R7XASC1gZlqkhrH3Ck" })
-        .then((currentToken) => {
-          if (currentToken) {
-            // Save token to user's document in Firestore
-            const userRef = doc(db, "users", user.uid);
-            updateDoc(userRef, { fcmToken: currentToken });
-            console.log("FCM Token saved:", currentToken);
-          }
-        })
-        .catch((err) => console.log("Error getting token:", err));
+const showNotificationPrompt = () => {
+  // Add UI element explaining how to enable notifications
+  // Click the lock/info icon in address bar -> Permissions -> Notifications -> Allow
+};
 
-      // Handle foreground messages
-      onMessage(messaging, (payload) => {
-        console.log("Foreground message received:", payload);
-        if (payload.notification && selectedUser?.uid !== payload.data?.senderId) {
-          new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: "/logo.png",
-          });
+    const setupFCM = async () => {
+      try {
+        const messaging = getMessaging();
+        const token = await getToken(messaging, { 
+          vapidKey: "BN7o9BDFrCw1kybbAOdTPxs0NpkIxRFO_QQRRq8aUtiuby0dWWvhlIQ-cOsExwOmVprq9R7XASC1gZlqkhrH3Ck" 
+        });
+        if (token) {
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, { fcmToken: token });
+          console.log("FCM Token saved:", token);
         }
-      });
-    } catch (error) {
-      console.error("Messaging initialization error:", error);
-    }
+      } catch (error) {
+        console.log("FCM setup error:", error);
+      }
+    };
+
+    // Setup foreground message handler
+    const setupForegroundHandler = async () => {
+      try {
+        const messaging = getMessaging();
+        onMessage(messaging, (payload) => {
+          console.log("Foreground message received:", payload);
+          if (payload.notification && selectedUser?.uid !== payload.data?.senderId) {
+            new Notification(payload.notification.title, {
+              body: payload.notification.body,
+              icon: "/logo.png",
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Messaging initialization error:", error);
+      }
+    };
+
+    requestNotificationPermission();
+    setupForegroundHandler();
   }, [user.uid, selectedUser]);
 
   // ✅ Handle reply to message

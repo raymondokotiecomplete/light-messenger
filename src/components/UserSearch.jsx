@@ -17,21 +17,32 @@ const UserSearch = ({ user, setSelectedUser }) => {
     return <div style={{ padding: "20px" }}>Loading...</div>;
   }
 
-  // 🔥 Real-time users fetch
+  // 🔥 Real-time users fetch with authentication check
   useEffect(() => {
+    // ✅ Ensure user is authenticated
+    if (!user) {
+      console.log('User not authenticated');
+      return;
+    }
+    
     const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
       const userList = snapshot.docs.map((doc) => ({
-  uid: doc.id, // 🔥 THIS IS THE FIX
-  ...doc.data(),
-}));
+        uid: doc.id,
+        ...doc.data(),
+      }));
 
-      console.log("Fetched users:", userList); // optional debug
-
+      console.log("Fetched users:", userList);
       setUsers(userList);
+    }, (error) => {
+      // ✅ Handle permission errors gracefully
+      console.error('Firestore error:', error);
+      if (error.code === 'permission-denied') {
+        console.log('⚠️ Permission denied - check if user is logged in');
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]); // ✅ Added 'user' as dependency
 
   // 🔍 Safe filtering
   const filteredUsers = users.filter(
@@ -61,6 +72,9 @@ const UserSearch = ({ user, setSelectedUser }) => {
           width: "100%",
           padding: "8px",
           marginBottom: "10px",
+          borderRadius: "8px",
+          border: "1px solid #E5E5EA",
+          outline: "none",
         }}
       />
 
@@ -69,7 +83,7 @@ const UserSearch = ({ user, setSelectedUser }) => {
         {filteredUsers.length > 0 ? (
           filteredUsers.map((u) => (
             <div
-              key={u.id}
+              key={u.uid}
               onClick={async () => {
                 try {
                   // 🔥 Generate unique chat ID
@@ -99,13 +113,26 @@ const UserSearch = ({ user, setSelectedUser }) => {
                 padding: "10px",
                 cursor: "pointer",
                 borderBottom: "1px solid #eee",
+                borderRadius: "8px",
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#F2F2F7";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
               }}
             >
-              {u.name || "Unnamed User"}
+              <div style={{ fontWeight: "500" }}>{u.name || "Unnamed User"}</div>
+              {u.email && (
+                <div style={{ fontSize: "12px", color: "#8E8E93" }}>
+                  {u.email}
+                </div>
+              )}
             </div>
           ))
         ) : (
-          <div style={{ padding: "10px", color: "#888" }}>
+          <div style={{ padding: "10px", color: "#888", textAlign: "center" }}>
             No users found
           </div>
         )}
